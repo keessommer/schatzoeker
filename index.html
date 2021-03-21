@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>🌴 De Schatten van Ïlanu</title>
+        <meta charset="utf-8"/>
+    </head>
+    <style>
+        :root{
+            --background-color: rgb(105, 134, 172);
+            --font-color:rgb(255, 236, 202);
+            --link-color:rgb(243, 142, 83);
+            --green-color:rgb(106, 165, 126);
+            --dark-blue-color:rgb(56, 86, 126);
+        }
+
+        body{
+            background-color:var(--background-color);
+            color:var(--font-color);
+            font-family: "Lucida Console", Courier, monospace;
+        }
+
+        table, th, td {
+            border-collapse: collapse;
+            border: 10px solid var(--dark-blue-color);
+
+            margin-left: auto;
+            margin-right: auto;
+            background-color: var(--green-color);
+        }
+        th, td {
+            width: 50px;
+            height: 50px;
+            border: var(--green-color);
+            text-align: center;
+        }
+
+        h1 {
+            text-align: center;
+        }
+        h3 {
+            text-align: center;
+        }
+        p {
+            text-align: center;
+        }
+        button  {
+            margin: 0;
+            position: absolute;
+            left: 50%;
+            -ms-transform: translateX(-50%);
+            transform: translateX(-50%);
+            background-color: var(--font-color);
+            color:var(--dark-blue-color);
+            border-width: 4px;
+            border-color: var(--background-color);
+            padding: 10px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            border-radius: 8px;
+            font-family: "Lucida Console", Courier, monospace;
+        }
+    </style>
+    <body>
+        <br>
+        <h1>De Schatten van Ïlanu</h1>
+        <br>
+        <p>Welkom bij de Schatten van Ïlanu! Hier kun je het eiland verkennen op zoek naar schatten! Klik op een gebied op de kaart om het te verkennen. 
+            <br>Klik op de knop boven de kaart om je schatten te verkopen voor Ïlanese Dollars. Hoe meer schatten je ontdekt voor je ze inwisselt, hoe meer je vangt op de zwarte markt. 
+            <br>Maar kijk uit! Het gevaar ligt op de loer. Als je op een gevaarlijk gebied klikt verlies je al je schatten en is het spel voorbij.</p>
+        <br>
+        <h3 id="treasureCounter">3 schatten</h3>
+        <button onclick="sellTreasureButtonClick()"><b>Verkoop mijn schatten</b></button>
+        <br><br><br><br>
+        <table id="myTable">
+            <tbody id="testBody"></tbody>
+        </table>
+
+        <script>
+            let array2d = [];
+            const emptyCell = ' ', treasureCell = '🌰', discoveredTreasureCell = '💎', dangerCell = '💀', emptyCellAmount = 55, treasureCellAmount = 20, dangerCellAmount = 25;
+            let treasureCount = 0;
+            function loadPage() {
+                treasureCount = 0;
+                updateTreasureCounter();
+                array2d = [];
+                const emptyCells = new Array(emptyCellAmount).fill(emptyCell);
+                const treasureCells = new Array(treasureCellAmount).fill(treasureCell);
+                const dangerCells = new Array(dangerCellAmount).fill(dangerCell);
+                const possibleEntries = emptyCells.concat(treasureCells).concat(dangerCells);
+                for (i = 0; i < 10; i++){
+                    let arr = [];
+                    for (j = 0; j < 10; j++){
+                        arr.push(possibleEntries[Math.floor(Math.random() * possibleEntries.length)])
+                    }
+                    array2d.push(arr);
+                }
+                for (i = 0; i < array2d.length; i++){
+                    for (j = 0; j < array2d[i].length; j ++){
+                        if([emptyCell, treasureCell].includes(array2d[i][j])){
+                            let dangerCounter = 0;
+                            let cirklingTiles = [];
+                            cirklingTiles = cirklingTiles.concat([array2d[i][j+1], array2d[i][j-1]]);
+                            if (i) { cirklingTiles = cirklingTiles.concat([array2d[i-1][j],array2d[i-1][j+1], array2d[i-1][j-1]])}
+                            if ( i < array2d.length-1){ cirklingTiles = cirklingTiles.concat([array2d[i+1][j],array2d[i+1][j+1], array2d[i+1][j-1]]) }
+                            cirklingTiles
+                            .forEach(e => {
+                                if (e && e === dangerCell){
+                                    dangerCounter++;
+                                }
+                            })
+                            if (dangerCounter > 0){
+                                array2d[i][j] = dangerCounter;
+                            }
+                        }
+                    }
+                }
+                function loadTableData(array2d) {
+                    const table = document.getElementById("testBody");
+                    table.innerHTML = '';
+                    array2d.forEach( array => {
+                        let row = table.insertRow();
+                        array.forEach(entry => {
+                            let cell = row.insertCell();
+                            cell.addEventListener("click", clickListener)
+                            cell.innerHTML = '🌴';
+                        })
+                    });
+                }
+                loadTableData(array2d);
+            }
+
+            function clickListener(event){
+                const cell = event.target;
+                revealCell(cell);
+                const cellX = cell.cellIndex;
+                const cellY = cell.parentNode.rowIndex;
+                let cellYIndex = cellY;
+                if (array2d[cellY][cellX] === dangerCell){
+                    alert('Oh nee, je bent in gevaarlijk gebied terechtgekomen!\nProbeer het nog eens.');
+                    loadPage();
+                    return;
+                };
+                while(shouldReveal(cellX, cellYIndex)){
+                    checkHorizontal(cellX, cellYIndex);
+                    cellYIndex--;
+                }
+                cellYIndex = cellY;
+                while(shouldReveal(cellX, cellYIndex)){
+                    checkHorizontal(cellX, cellYIndex);
+                    cellYIndex++;
+                }
+            }
+
+            function checkHorizontal(cellX, cellY){
+                const table = document.getElementById("testBody");
+                const rowFinalHalf = array2d[cellY].slice(cellX);
+                let cellXIndex = cellX;
+                rowFinalHalf.some( cell => {
+                    if (shouldReveal(cellXIndex, cellY)){
+                        revealCell(table.rows[cellY].cells[cellXIndex]);
+                        cellXIndex++;
+                    }else{return true}
+                })
+                const rowFirstHalf = array2d[cellY].slice(0, cellX);
+                cellXIndex = cellX;
+                rowFinalHalf.reverse().some( cell => {
+                    if (shouldReveal(cellXIndex, cellY)){
+                        revealCell(table.rows[cellY].cells[cellXIndex]);
+                        cellXIndex--;
+                    }else{return true}
+                })
+            }
+
+            function shouldReveal(cellX, cellY){
+                return array2d[cellY][cellX]!= dangerCell;
+            }
+
+            function revealCell(cell){
+                const cellX = cell.cellIndex;
+                const cellY = cell.parentNode.rowIndex;
+                cell.innerHTML = array2d[cellY][cellX];
+                if (array2d[cellY][cellX]===treasureCell){
+                    console.log(`${cellX} ${cellY}`)
+                    treasureCount++;
+                    updateTreasureCounter();
+                    array2d[cellY][cellX]=discoveredTreasureCell;
+                }
+                cell.innerHTML = array2d[cellY][cellX];
+            }
+            function updateTreasureCounter(){
+                document.getElementById('treasureCounter').innerHTML = `${treasureCount} ${discoveredTreasureCell}`;
+            }
+            function sellTreasureButtonClick(){
+                alert(`Gefeliciteerd!\nJe hebt ${treasureCount} schatten verkocht voor\n${treasureCount} * ${treasureCount} = ${treasureCount*treasureCount} Ïlanese Dollar`);
+                loadPage();
+            }
+            loadPage();
+
+        </script>
+    </body>
+</html> 
